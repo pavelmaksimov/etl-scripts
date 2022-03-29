@@ -1,0 +1,3 @@
+marilyn-api==0.1.1
+clickhouse-driver==0.2.3
+dateutils
