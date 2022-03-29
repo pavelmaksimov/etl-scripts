@@ -16,8 +16,7 @@ create_table_of_mary_placements_query = """CREATE TABLE IF NOT EXISTS {} (
     utm_source String,
     outer_synced_at DateTime64
 ) ENGINE ReplacingMergeTree()
-    ORDER BY placement_id
-    SAMPLE BY placement_id"""
+    ORDER BY placement_id"""
 
 create_table_of_mary_stats_query = """CREATE TABLE IF NOT EXISTS {} (
     channel_id UInt8,
@@ -37,5 +36,4 @@ create_table_of_mary_stats_query = """CREATE TABLE IF NOT EXISTS {} (
     revenue_model_orders Float32
 ) ENGINE MergeTree()
     ORDER BY (channel_id, campaign_xid, placement_id, placement_name, date)
-    SAMPLE BY (channel_id, campaign_xid)
     PARTITION BY date"""
