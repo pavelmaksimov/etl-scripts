@@ -16,10 +16,11 @@ source venv/bin/activate
 ```shell
 cd etl-scripts
 source venv/bin/activate
+pip install -r requirements.txt
 
-python project/marilyn/main.py --help
+python project/marylin-clickhouse.py --help
 
-python project/marilyn/main.py \ 
+python project/marylin-clickhouse.py \ 
   --marilyn-api-root <https://app.mymarilyn.ru> \ 
   --marilyn-token <token> \ 
   --marilyn-account <123> \ 
@@ -36,7 +37,7 @@ Logs save to 'etl-mary-clickhouse.log'
 
 # Record for crontab
 ```shell
-0 0 * * * etl-scripts/venv/bin/python3.7 project/marilyn/main.py \ 
+0 0 * * * etl-scripts/venv/bin/python3.7 project/marilyn/marylin-clickhouse.py \ 
   --marilyn-api-root <https://app.mymarilyn.ru> \ 
   --marilyn-token <token> \ 
   --marilyn-account <123> \ 

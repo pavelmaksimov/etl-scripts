@@ -6,10 +6,10 @@ from datetime import timedelta, date, datetime
 
 from marilyn_api.client import AsyncClient
 
-from project.marilyn import helper
-from project.utils.clickhouse import Client
-from project.utils.dt_helper import iter_range_datetime
-from project.utils.transform_funcs import to_float, to_date
+from marilyn import helper
+from utils.clickhouse import Client
+from utils.dt_helper import iter_range_datetime
+from utils.transform_funcs import to_float, to_date
 
 PROJECT_PLACEMENTS_TABLE_NAME = "mary_placements"
 STATS_TABLE_NAME = "mary_stats"
