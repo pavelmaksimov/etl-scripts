@@ -29,15 +29,17 @@ python project/marylin-clickhouse.py \
   --db-name <mydb> \ 
   --db-user <default> \ 
   --db-password <pass> \ 
-  -s $(date -d "7 day ago" '+%Y-%m-%d') \ 
-  -e $(date -d "today" '+%Y-%m-%d')
+  --start-date $(date -d "7 day ago" '+%Y-%m-%d') \ 
+  --end-date $(date -d "today" '+%Y-%m-%d')
 ```
 
 Logs save to 'etl-mary-clickhouse.log'
 
 # Record for crontab
+
+Will run every day at 00:00
 ```shell
-0 0 * * * etl-scripts/venv/bin/python3.7 project/marilyn/marylin-clickhouse.py \ 
+0 0 * * * etl-scripts/venv/bin/python project/marilyn/marylin-clickhouse.py \ 
   --marilyn-api-root <https://app.mymarilyn.ru> \ 
   --marilyn-token <token> \ 
   --marilyn-account <123> \ 
@@ -46,6 +48,6 @@ Logs save to 'etl-mary-clickhouse.log'
   --db-name <mydb> \ 
   --db-user <default> \ 
   --db-password <pass> \ 
-  -s $(date -d "7 day ago" '+%Y-%m-%d') \ 
-  -e $(date -d "today" '+%Y-%m-%d')
+  --start-date $(date -d "7 day ago" '+%Y-%m-%d') \ 
+  --end-date $(date -d "today" '+%Y-%m-%d')
 ```

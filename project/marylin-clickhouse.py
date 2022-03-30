@@ -3,65 +3,80 @@ import asyncio
 import logging
 import pathlib
 from datetime import timedelta, date, datetime
+from logging.handlers import RotatingFileHandler
 
 from marilyn_api.client import AsyncClient
 
 from marilyn import helper
 from utils.clickhouse import Client
 from utils.dt_helper import iter_range_datetime
-from utils.transform_funcs import to_float, to_date
+from utils.transform_funcs import to_float, to_date, delete_row_on_error
 
 PROJECT_PLACEMENTS_TABLE_NAME = "mary_placements"
 STATS_TABLE_NAME = "mary_stats"
 
-LOGGING_FORMAT = "%(asctime)s %(pathname)s:%(funcName)s %(message)s"
+LOGGING_FORMAT = "%(asctime)s [%(levelname)s] %(pathname)s:%(funcName)s  %(message)s"
 LOGGING_FILEPATH = pathlib.Path.cwd() / "etl-mary-clickhouse.log"
+LOGGING_INFO = logging.INFO
 
-logging.basicConfig(
-    format=LOGGING_FORMAT, level=logging.INFO, filename=LOGGING_FILEPATH, filemode="a"
-)
+logging.basicConfig(format=LOGGING_FORMAT, level=LOGGING_INFO)
 logger = logging.getLogger(__name__)
-
-logger.info("LOGGING_FILEPATH: %s", LOGGING_FILEPATH)
+logger.info("LOGGING_FILEPATH: '%s'", LOGGING_FILEPATH)
+logger.addHandler(
+    RotatingFileHandler(
+        LOGGING_FILEPATH, mode='a', backupCount=2, maxBytes=1024 * 1024 * 50, # 50MB
+    )
+)
 
 
 async def etl_project_placements(
     mary_client: AsyncClient,
     db_client: Client,
     project_id: int,
+    db_name: str,
 ):
-    logger.info("Create table %s", PROJECT_PLACEMENTS_TABLE_NAME)
+    db_table = f"{db_name}.{PROJECT_PLACEMENTS_TABLE_NAME}"
+
+    logger.info("Create table '%s'", db_table)
     db_client.execute(
-        helper.create_table_of_mary_placements_query.format(
-            PROJECT_PLACEMENTS_TABLE_NAME
-        )
+        helper.create_table_of_mary_placements_query.format(db_table)
     )
 
     logger.info("Export placements")
     async for page in mary_client.iter_project_placements(project_id):
-        for i, item in enumerate(page["items"]):
-            # Transform data types.
-            page["items"][i]["placement_id"] = page["items"][i].pop("id")
-            page["items"][i]["placement_name"] = page["items"][i].pop("name")
-            page["items"][i]["outer_synced_at"] = to_date(
-                page["items"][i]["outer_synced_at"]
-            )
+        number_of_not_inserted_rows = 0
 
-        logger.info("Insert data to %s", PROJECT_PLACEMENTS_TABLE_NAME)
-        db_client.insert(PROJECT_PLACEMENTS_TABLE_NAME, page["items"])
+        for i, item in enumerate(page["items"]):
+            count_page_rows = len(page["items"])
+
+            # Transform data types.
+            with delete_row_on_error(page["items"], i, logger) as row:
+                row["placement_id"] = row.pop("id")
+                row["placement_name"] = row.pop("name")
+                row["outer_synced_at"] = to_date(row["outer_synced_at"])
+
+            number_of_not_inserted_rows += count_page_rows - len(page["items"])
+
+        logger.info("Insert data to '%s'", db_table)
+        db_client.insert(db_table, page["items"])
+        logger.info("Inserted %s lines", len(page["items"]))
+        logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
 
 
 async def etl_stats(
     mary_client: AsyncClient,
     db_client: Client,
-    project_id,
+    project_id: int,
+    db_name: str,
     start_date: date,
     end_date: date,
 ):
+    db_table = f"{db_name}.{STATS_TABLE_NAME}"
+
     body = {
         "channel_id": [],
-        "start_date": str(start_date.strftime("%Y-%m-%d")),
-        "end_date": str(end_date.strftime("%Y-%m-%d")),
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
         "date_grouping": "day",
         "grouping": "placement",
         "filtering": [{"entity": "project", "entities": [project_id]}],
@@ -90,29 +105,35 @@ async def etl_stats(
         ],
     }
 
-    logger.info("Create table %s", STATS_TABLE_NAME)
-    db_client.execute(helper.create_table_of_mary_stats_query.format(STATS_TABLE_NAME))
+    logger.info("Create table '%s'", db_table)
+    db_client.execute(helper.create_table_of_mary_stats_query.format(db_table))
 
-    logger.info("Drop partition in %s", STATS_TABLE_NAME)
+    logger.info("Drop partition in '%s'", db_table)
     dates = iter_range_datetime(start_date, end_date, timedelta(days=1))
-    db_client.drop_partitions_by_dates(STATS_TABLE_NAME, dates)
+    db_client.drop_partitions_by_dates(db_table, dates)
 
     logger.info("Export stats")
     async for page in mary_client.iter_statistics_detailed(body):
+        number_of_not_inserted_rows = 0
         for i, item in enumerate(page["items"]):
-            # Transform data types.
-            page["items"][i]["cost_fact"] = to_float(page["items"][i]["cost_fact"])
-            page["items"][i]["cpc_fact"] = to_float(page["items"][i]["cpc_fact"])
-            page["items"][i]["cpm_fact"] = to_float(page["items"][i]["cpm_fact"])
-            page["items"][i]["ctr"] = to_float(page["items"][i]["ctr"])
-            page["items"][i]["revenue"] = to_float(page["items"][i]["revenue"])
-            page["items"][i]["revenue_model_orders"] = to_float(
-                page["items"][i]["revenue_model_orders"]
-            )
-            page["items"][i]["date"] = to_date(page["items"][i]["date"])
+            count_page_rows = len(page["items"])
 
-        logger.info("Insert data to %s", STATS_TABLE_NAME)
-        db_client.insert(STATS_TABLE_NAME, page["items"])
+            # Transform data types.
+            with delete_row_on_error(page["items"], i, logger) as row:
+                row["cost_fact"] = to_float(row["cost_fact"])
+                row["cpc_fact"] = to_float(row["cpc_fact"])
+                row["cpm_fact"] = to_float(row["cpm_fact"])
+                row["ctr"] = to_float(row["ctr"])
+                row["revenue"] = to_float(row["revenue"])
+                row["revenue_model_orders"] = to_float(row["revenue_model_orders"])
+                row["date"] = to_date(row["date"])
+
+            number_of_not_inserted_rows += count_page_rows - len(page["items"])
+
+        logger.info("Insert data to '%s'", db_table)
+        db_client.insert(db_table, page["items"])
+        logger.info("Inserted %s lines", len(page["items"]))
+        logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
 
 
 async def main(
@@ -136,14 +157,11 @@ async def main(
     mary_client = AsyncClient(api_root, headers)
 
     # Create database.
-    logger.info("Create database %s", db_name)
+    logger.info("Create database '%s'", db_name)
     db_client.execute(helper.create_database_query.format(db_name))
 
-    # Set default database name.
-    db_client.connection.database = db_name
-
-    await etl_project_placements(mary_client, db_client, project_id)
-    await etl_stats(mary_client, db_client, project_id, start_date, end_date)
+    await etl_project_placements(mary_client, db_client, project_id, db_name)
+    await etl_stats(mary_client, db_client, project_id, db_name, start_date, end_date)
 
     logger.info("Success")
 
