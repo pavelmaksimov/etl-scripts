@@ -37,8 +37,10 @@ Logs save to 'etl-mary-clickhouse.log'
 
 # Record for crontab
 
+    crontab -e
+
 Will run every day at 00:00
-```shell
+```
 0 0 * * * etl-scripts/venv/bin/python project/marilyn/marylin-clickhouse.py \ 
   --marilyn-api-root <https://app.mymarilyn.ru> \ 
   --marilyn-token <token> \ 
