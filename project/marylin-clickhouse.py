@@ -10,7 +10,7 @@ from marilyn_api.client import AsyncClient
 from marilyn import helper
 from utils.clickhouse import Client
 from utils.dt_helper import iter_range_datetime
-from utils.transform_funcs import to_float, to_date, delete_row_on_error
+from utils.transform_funcs import to_date, delete_row_on_error, to_decimal
 
 PROJECT_PLACEMENTS_TABLE_NAME = "mary_placements"
 STATS_TABLE_NAME = "mary_stats"
@@ -120,12 +120,12 @@ async def etl_stats(
 
             # Transform data types.
             with delete_row_on_error(page["items"], i, logger) as row:
-                row["cost_fact"] = to_float(row["cost_fact"])
-                row["cpc_fact"] = to_float(row["cpc_fact"])
-                row["cpm_fact"] = to_float(row["cpm_fact"])
-                row["ctr"] = to_float(row["ctr"])
-                row["revenue"] = to_float(row["revenue"])
-                row["revenue_model_orders"] = to_float(row["revenue_model_orders"])
+                row["cost_fact"] = to_decimal(row["cost_fact"])
+                row["cpc_fact"] = to_decimal(row["cpc_fact"])
+                row["cpm_fact"] = to_decimal(row["cpm_fact"])
+                row["ctr"] = to_decimal(row["ctr"])
+                row["revenue"] = to_decimal(row["revenue"])
+                row["revenue_model_orders"] = to_decimal(row["revenue_model_orders"])
                 row["date"] = to_date(row["date"])
 
             number_of_not_inserted_rows += count_page_rows - len(page["items"])
