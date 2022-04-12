@@ -35,5 +35,5 @@ create_table_of_mary_stats_query = """CREATE TABLE IF NOT EXISTS {} (
     revenue Float32,
     revenue_model_orders Float32
 ) ENGINE MergeTree()
-    ORDER BY (channel_id, campaign_xid, placement_id, placement_name, date)
+    ORDER BY (date, channel_id, campaign_xid, placement_id, placement_name)
     PARTITION BY date"""
