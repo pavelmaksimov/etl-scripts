@@ -35,7 +35,7 @@ create_table_of_mary_stats_query = """CREATE TABLE IF NOT EXISTS {} (
     revenue Nullable(Float32),
     revenue_model_orders Nullable(Float32)
 ) ENGINE MergeTree()
-    ORDER BY (date, channel_id, campaign_xid, placement_id, placement_name)
+    ORDER BY (date, channel_id, campaign_xid, placement_id)
     PARTITION BY date"""
 
 create_table_of_mary_ad_stats_query = """CREATE TABLE IF NOT EXISTS {} (
@@ -97,5 +97,5 @@ create_table_of_mary_ad_stats_query = """CREATE TABLE IF NOT EXISTS {} (
     engagements Nullable(UInt64),
     engagement_rate Nullable(Float32)
 ) ENGINE MergeTree()
-    ORDER BY (date, channel_id, campaign_xid, placement_id, placement_name, ad_id)
+    ORDER BY (date, channel_id, campaign_xid, placement_id, adgroup_id, ad_id)
     PARTITION BY date"""
