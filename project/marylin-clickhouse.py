@@ -61,7 +61,8 @@ async def etl_project_placements(
         logger.info("Insert data to '%s'", db_table)
         db_client.insert(db_table, page["items"])
         logger.info("Inserted %s lines", len(page["items"]))
-        logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
+        if number_of_not_inserted_rows:
+            logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
 
 
 async def etl_stats(
@@ -138,7 +139,8 @@ async def etl_stats(
         logger.info("Insert data to '%s'", db_table)
         db_client.insert(db_table, page["items"])
         logger.info("Inserted %s lines", len(page["items"]))
-        logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
+        if number_of_not_inserted_rows:
+            logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
 
 
 async def etl_ad_stats(
@@ -266,7 +268,8 @@ async def etl_ad_stats(
         logger.info("Insert data to '%s'", db_table)
         db_client.insert(db_table, page["items"])
         logger.info("Inserted %s lines", len(page["items"]))
-        logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
+        if number_of_not_inserted_rows:
+            logger.warning("Number of not inserted rows %s lines", number_of_not_inserted_rows)
 
 
 async def main(
