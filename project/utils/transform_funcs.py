@@ -10,7 +10,7 @@ from dateutil import parser
 def delete_row_on_error(dataset: List[dict], row_index: int, logger):
     try:
         yield dataset[row_index]
-    except (TypeError, ValueError, IndexError):
+    except (TypeError, ValueError, IndexError, AttributeError):
         logger.exception("Missing line due to transform error: %s", dataset[row_index])
         del dataset[row_index]
 
