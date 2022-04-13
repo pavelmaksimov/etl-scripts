@@ -115,6 +115,10 @@ async def etl_stats(
 
     logger.info("Export stats")
     async for page in mary_client.iter_statistics_detailed(body):
+        if len(page["items"]) == 1 and page["items"][0]["date"] is None:
+            logger.info("Empty data page")
+            break
+
         number_of_not_inserted_rows = 0
         for i, item in enumerate(page["items"]):
             count_page_rows = len(page["items"])
@@ -230,6 +234,10 @@ async def etl_ad_stats(
 
     logger.info("Export ad stats")
     async for page in mary_client.iter_statistics_detailed(body):
+        if len(page["items"]) == 1 and page["items"][0]["date"] is None:
+            logger.info("Empty data page")
+            break
+
         number_of_not_inserted_rows = 0
         for i, item in enumerate(page["items"]):
             count_page_rows = len(page["items"])
